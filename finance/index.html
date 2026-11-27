@@ -1,0 +1,439 @@
+<!doctype html>
+<html lang="en-CA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Finance Tracker</title>
+<meta name="theme-color" content="#0b3d36">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Finance">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="apple-touch-icon" href="icon.svg">
+<style>
+:root{
+  --bg:#eef6f0; --card:#ffffff; --ink:#12312b; --muted:#5f7a72;
+  --green:#1a7a4a; --deep:#0b3d36; --ring:#2e9e63; --track:#dcebe2;
+  --coral:#e4572e; --gold:#f5c252; --line:#d8e6dd;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+html,body{margin:0; padding:0}
+body{background:var(--bg); color:var(--ink); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,Arial,sans-serif; padding-bottom:96px}
+header{padding:20px 18px 4px; display:flex; align-items:center; justify-content:space-between}
+h1{font-size:22px; margin:0; color:var(--deep)}
+.month-total{text-align:right}
+.month-total b{display:block; font-size:20px; color:var(--deep)}
+.month-total span{font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:1px}
+main{padding:8px 16px 0; max-width:560px; margin:0 auto}
+.card{background:var(--card); border:1px solid var(--line); border-radius:18px; padding:18px; margin-top:14px}
+.card h2{margin:0 0 10px; font-size:16px; color:var(--deep)}
+.muted{color:var(--muted); font-size:13px}
+.hidden{display:none !important}
+/* Overview summary */
+.summary{display:grid; grid-template-columns:repeat(3,1fr); gap:8px}
+.summary .s{background:#f2f8f4; border-radius:12px; padding:12px 6px; text-align:center}
+.summary b{display:block; font-size:17px; color:var(--deep)}
+.summary span{font-size:11px; color:var(--muted)}
+.summary .s.over b{color:var(--coral)}
+/* Category bars */
+.cat-row{margin:12px 0}
+.cat-row .top{display:flex; justify-content:space-between; font-size:14px}
+.cat-row .top b{color:var(--deep)}
+.bar{height:10px; background:var(--track); border-radius:99px; overflow:hidden; margin-top:5px}
+.bar i{display:block; height:100%; background:var(--ring); width:0%}
+.bar i.over{background:var(--coral)}
+/* Flags */
+.flag{display:flex; gap:10px; padding:10px 0; border-bottom:1px solid var(--line); align-items:flex-start}
+.flag:last-child{border-bottom:0}
+.flag .mark{flex:none; width:12px; height:12px; border-radius:50%; background:var(--coral); margin-top:4px}
+.flag b{color:var(--deep); font-size:14px}
+.flag p{margin:2px 0 0; font-size:12px; color:var(--muted)}
+/* Transactions */
+.search{width:100%; padding:11px; border:1px solid var(--line); border-radius:10px; font-size:16px; font-family:inherit}
+.day-head{font-size:12px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin:16px 0 4px}
+.tx{display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--line)}
+.tx:last-child{border-bottom:0}
+.tx .who{flex:1; min-width:0}
+.tx .who b{display:block; color:var(--deep); font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.tx select{border:1px solid var(--line); border-radius:8px; padding:5px; font-size:12px; color:var(--deep); background:#fff; max-width:118px}
+.tx .amt{font-weight:800; font-size:14px; white-space:nowrap}
+.tx .amt.exp{color:var(--coral)}
+.tx .amt.inc{color:var(--green)}
+.tx .del{border:0; background:none; color:var(--coral); font-weight:700; font-size:15px; cursor:pointer; padding:4px}
+/* Budgets */
+.budget-row{padding:12px 0; border-bottom:1px solid var(--line)}
+.budget-row:last-child{border-bottom:0}
+.budget-row .top{display:flex; justify-content:space-between; align-items:center; gap:10px}
+.budget-row .top b{color:var(--deep); font-size:14px}
+.budget-edit{display:flex; align-items:center; gap:4px}
+.budget-edit input{width:90px; padding:8px; border:1px solid var(--line); border-radius:8px; font-size:15px; text-align:right}
+.budget-row .sub{font-size:12px; color:var(--muted); margin-top:5px}
+.budget-row .sub.over{color:var(--coral); font-weight:700}
+/* Add form */
+label.f{display:block; font-size:13px; font-weight:700; color:var(--deep); margin-top:12px}
+input[type=text], input[type=number], input[type=date], select.full{width:100%; padding:11px; border:1px solid var(--line); border-radius:10px; font-size:16px; font-family:inherit; background:#fff}
+.toggle{display:flex; gap:8px; margin-top:6px}
+.toggle button{flex:1; border:2px solid var(--line); background:#fff; border-radius:12px; padding:11px 0; font-size:15px; font-weight:700; color:var(--deep); cursor:pointer}
+.toggle button.sel{border-color:var(--green); background:#e7f4ec}
+.btn-save{background:var(--green); color:#fff; border:0; border-radius:12px; padding:14px; font-size:16px; font-weight:700; width:100%; cursor:pointer; margin-top:16px}
+.saved-msg{color:var(--green); font-size:13px; margin-top:8px; min-height:16px}
+/* Tabs */
+nav.tabs{position:fixed; left:0; right:0; bottom:0; background:#fff; border-top:1px solid var(--line); display:flex; padding:8px 6px calc(8px + env(safe-area-inset-bottom)); z-index:10}
+nav.tabs button{flex:1; border:0; background:none; font-size:12px; font-weight:700; color:var(--muted); padding:8px 0; cursor:pointer}
+nav.tabs button.sel{color:var(--green)}
+ol.steps{margin:8px 0 0; padding-left:20px; font-size:14px; line-height:1.55}
+.status-note{background:#f2f8f4; border-radius:12px; padding:12px; font-size:14px; margin-top:10px}
+.empty{color:var(--muted); font-size:14px; padding:8px 0}
+.merchant-row{display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--line); font-size:14px}
+.merchant-row:last-child{border-bottom:0}
+.merchant-row b{color:var(--deep)}
+</style>
+</head>
+<body>
+<header>
+  <h1>Finance Tracker</h1>
+  <div class="month-total"><b id="headSpent">$0.00</b><span>spent this month</span></div>
+</header>
+<main>
+  <!-- OVERVIEW -->
+  <section id="tab-overview">
+    <div class="card">
+      <h2 id="ovMonth">This month</h2>
+      <div class="summary">
+        <div class="s"><b id="sumSpent">$0.00</b><span>Spent</span></div>
+        <div class="s"><b id="sumIncome">$0.00</b><span>Income</span></div>
+        <div class="s" id="leftBox"><b id="sumLeft">$0.00</b><span>Left</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Spending by area</h2>
+      <div id="catBars"></div>
+      <p class="empty hidden" id="catEmpty">Nothing spent yet this month. Add your first transaction in the Add tab.</p>
+    </div>
+
+    <div class="card">
+      <h2>Spending too much</h2>
+      <div id="flags"></div>
+      <p class="empty hidden" id="flagsEmpty">Nothing flagged. No category is over budget or climbing fast.</p>
+    </div>
+
+    <div class="card">
+      <h2>Top stores this month</h2>
+      <div id="merchants"></div>
+      <p class="empty hidden" id="merchantsEmpty">No spending yet this month.</p>
+    </div>
+
+    <div class="card">
+      <h2>Put this on your Home Screen</h2>
+      <div class="status-note" id="standaloneNote">Checking how you opened this page…</div>
+      <p><b>Safari</b></p>
+      <ol class="steps">
+        <li>Open this page in Safari itself. If you tapped a link inside another app, copy the address, open Safari, and paste it in.</li>
+        <li>Tap the Share button.</li>
+        <li>Tap Add to Home Screen.</li>
+        <li>Tap Add. The Finance icon lands on your Home Screen and opens full screen.</li>
+      </ol>
+      <p style="margin-top:14px"><b>Chrome</b></p>
+      <ol class="steps">
+        <li>Open this page in Chrome itself, pasting the address if you came from another app.</li>
+        <li>Tap the Share icon at the right of the address bar.</li>
+        <li>Tap Add to Home Screen. Keep Open as Web App on if that switch shows.</li>
+        <li>Tap Add.</li>
+      </ol>
+      <p class="muted" style="margin-top:12px">Your log is saved in the browser on this phone only, so stick to one browser for this page.</p>
+    </div>
+  </section>
+
+  <!-- TRANSACTIONS -->
+  <section id="tab-transactions" class="hidden">
+    <div class="card">
+      <h2>Transactions</h2>
+      <input type="text" class="search" id="txSearch" placeholder="Search by name or store">
+      <div id="txList"></div>
+      <p class="empty hidden" id="txEmpty">No transactions yet. Add one in the Add tab.</p>
+    </div>
+  </section>
+
+  <!-- BUDGETS -->
+  <section id="tab-budgets" class="hidden">
+    <div class="card">
+      <h2>Monthly budgets</h2>
+      <p class="muted">Set a monthly limit per area. The bar shows this month's spending against it.</p>
+      <div id="budgetList"></div>
+    </div>
+  </section>
+
+  <!-- ADD -->
+  <section id="tab-add" class="hidden">
+    <div class="card">
+      <h2>Add a transaction</h2>
+      <label class="f">Type</label>
+      <div class="toggle">
+        <button id="typeExp" class="sel">Expense</button>
+        <button id="typeInc">Income</button>
+      </div>
+      <label class="f">Amount (CAD)</label>
+      <input type="number" id="addAmount" min="0" step="0.01" placeholder="0.00" inputmode="decimal">
+      <label class="f">Name or store</label>
+      <input type="text" id="addName" placeholder="e.g. WAL-MART #1207">
+      <label class="f">Category</label>
+      <select class="full" id="addCategory"></select>
+      <label class="f">Date</label>
+      <input type="date" id="addDate">
+      <button class="btn-save" id="addSave">Save transaction</button>
+      <div class="saved-msg" id="addMsg"></div>
+    </div>
+  </section>
+</main>
+
+<nav class="tabs">
+  <button data-tab="overview" class="sel">Overview</button>
+  <button data-tab="transactions">Transactions</button>
+  <button data-tab="budgets">Budgets</button>
+  <button data-tab="add">Add</button>
+</nav>
+
+<script>
+(function(){
+"use strict";
+var KEY = "finance-tracker-home-v1";
+var CATS = ["Groceries","Eating Out","Shopping","Gas & Transport","Bills & Utilities","Home","Health","Fun","Transfers","Other"];
+var KEYWORDS = [
+  ["Groceries", ["LOBLAWS","REAL CANADIAN","SUPERSTORE","SOBEYS","SAFEWAY","SAVE-ON","SAVE ON FOODS","FRESHCO","NO FRILLS","FOOD BASICS","METRO","IGA","FARM BOY","T&T","COSTCO","GROCER"]],
+  ["Eating Out", ["TIM HORTONS","MCDONALD","STARBUCKS","SUBWAY","A&W","BURGER KING","WENDY","PIZZA","SUSHI","RESTAURANT","CAFE","COFFEE","UBER EATS","DOORDASH","SKIPTHEDISHES","CHAI","CURRY","KEBAB","TACO","BOSTON PIZZA","EARLS","CACTUS CLUB"]],
+  ["Shopping", ["WAL-MART","WALMART","AMAZON","DOLLARAMA","CANADIAN TIRE","HOME DEPOT","BEST BUY","WINNERS","MARSHALLS","IKEA","APPLE.COM","APPLE STORE","SPORT CHEK","LULULEMON","ZARA","H&M"]],
+  ["Gas & Transport", ["SHELL","PETRO","ESSO","HUSKY","CHEVRON","GAS","FUEL","BC TRANSIT","TRANSLINK","UBER","LYFT","TAXI","PARKING","ICBC"]],
+  ["Bills & Utilities", ["BC HYDRO","FORTIS","TELUS","ROGERS","BELL","SHAW","FIDO","KOODO","VIRGIN","INSURANCE","RENT","MORTGAGE","STRATA","CITY OF","PROPERTY TAX","NETFLIX","SPOTIFY","SUBSCRIPTION"]],
+  ["Home", ["HOME DEPOT","LOWES","RONA","HOME HARDWARE","BED BATH","STRUCTUBE","WAYFAIR"]],
+  ["Health", ["PHARMACY","SHOPPERS DRUG","REXALL","LONDON DRUGS","DENTAL","DENTIST","CLINIC","MEDICAL","GYM","FITNESS"]],
+  ["Fun", ["CINEPLEX","THEATRE","MOVIE","STEAM","PLAYSTATION","XBOX","NINTENDO","TICKET","CONCERT","LIQUOR","BCLC","LOTTO"]],
+  ["Transfers", ["INTERAC","E-TRANSFER","ETRANSFER","TRANSFER","PAYPAL","WISE"]]
+];
+function guessCategory(name){
+  var n = (name || "").toUpperCase();
+  for(var i=0;i<KEYWORDS.length;i++){
+    for(var j=0;j<KEYWORDS[i][1].length;j++){
+      if(n.indexOf(KEYWORDS[i][1][j]) !== -1) return KEYWORDS[i][0];
+    }
+  }
+  return "Other";
+}
+function todayStr(d){ d = d || new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+function monthKey(dateStr){ return (dateStr || "").slice(0,7); }
+function curMonth(){ return todayStr().slice(0,7); }
+function prevMonth(){
+  var d = new Date(); d.setDate(1); d.setMonth(d.getMonth()-1);
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");
+}
+function money(n){ return "$" + Math.abs(n).toFixed(2); }
+function load(){
+  try{ var s = JSON.parse(localStorage.getItem(KEY)); if(s && typeof s === "object" && Array.isArray(s.tx)) return s; }catch(e){}
+  return { tx: [], budgets: {} };
+}
+var S = load();
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
+
+/* Tabs */
+var tabBtns = document.querySelectorAll("nav.tabs button");
+tabBtns.forEach(function(b){ b.addEventListener("click", function(){
+  tabBtns.forEach(function(x){ x.classList.remove("sel"); }); b.classList.add("sel");
+  ["overview","transactions","budgets","add"].forEach(function(t){
+    document.getElementById("tab-"+t).classList.toggle("hidden", t !== b.dataset.tab);
+  });
+  render();
+});});
+
+/* Aggregation */
+function monthTx(mk){ return S.tx.filter(function(t){ return monthKey(t.date) === mk; }); }
+function spentByCat(mk){
+  var out = {};
+  monthTx(mk).forEach(function(t){ if(t.type === "expense"){ out[t.cat] = (out[t.cat] || 0) + t.amount; } });
+  return out;
+}
+function monthTotals(mk){
+  var spent = 0, income = 0;
+  monthTx(mk).forEach(function(t){ if(t.type === "expense") spent += t.amount; else income += t.amount; });
+  return { spent: spent, income: income, left: income - spent };
+}
+
+/* Overview */
+function renderOverview(){
+  var mk = curMonth(), tot = monthTotals(mk);
+  var monthName = new Date().toLocaleDateString("en-CA", { month: "long", year: "numeric" });
+  document.getElementById("ovMonth").textContent = monthName;
+  document.getElementById("headSpent").textContent = money(tot.spent);
+  document.getElementById("sumSpent").textContent = money(tot.spent);
+  document.getElementById("sumIncome").textContent = money(tot.income);
+  document.getElementById("sumLeft").textContent = (tot.left < 0 ? "−" : "") + money(tot.left);
+  document.getElementById("leftBox").classList.toggle("over", tot.left < 0);
+
+  var byCat = spentByCat(mk);
+  var cats = Object.keys(byCat).sort(function(a,b){ return byCat[b] - byCat[a]; });
+  var max = cats.length ? byCat[cats[0]] : 0;
+  var bars = document.getElementById("catBars"); bars.innerHTML = "";
+  document.getElementById("catEmpty").classList.toggle("hidden", cats.length > 0);
+  cats.forEach(function(c){
+    var budget = S.budgets[c] || 0;
+    var over = budget > 0 && byCat[c] > budget;
+    var row = document.createElement("div"); row.className = "cat-row";
+    row.innerHTML = '<div class="top"><b>'+c+'</b><span>'+money(byCat[c])+(budget ? ' of '+money(budget) : '')+'</span></div>' +
+      '<div class="bar"><i class="'+(over ? "over" : "")+'" style="width:'+Math.max(3, byCat[c]/max*100)+'%"></i></div>';
+    bars.appendChild(row);
+  });
+
+  /* Flags: over budget, or >30% above last month (last month >= $50) */
+  var pm = spentByCat(prevMonth());
+  var flags = [];
+  cats.forEach(function(c){
+    var budget = S.budgets[c] || 0;
+    if(budget > 0 && byCat[c] > budget){
+      flags.push({ cat: c, text: "Over budget by " + money(byCat[c] - budget) + " (" + money(byCat[c]) + " of " + money(budget) + " this month)." });
+    } else if(pm[c] >= 50 && byCat[c] > pm[c] * 1.3){
+      flags.push({ cat: c, text: "Already " + money(byCat[c]) + " this month vs " + money(pm[c]) + " in all of last month, up " + Math.round((byCat[c]/pm[c] - 1) * 100) + "%." });
+    }
+  });
+  var fl = document.getElementById("flags"); fl.innerHTML = "";
+  document.getElementById("flagsEmpty").classList.toggle("hidden", flags.length > 0);
+  flags.forEach(function(f){
+    var d = document.createElement("div"); d.className = "flag";
+    d.innerHTML = '<div class="mark"></div><div><b>'+f.cat+'</b><p>'+f.text+'</p></div>';
+    fl.appendChild(d);
+  });
+
+  /* Top merchants */
+  var byMerch = {};
+  monthTx(mk).forEach(function(t){ if(t.type === "expense"){ var k = t.name || "Unknown"; byMerch[k] = (byMerch[k] || 0) + t.amount; } });
+  var merch = Object.keys(byMerch).sort(function(a,b){ return byMerch[b] - byMerch[a]; }).slice(0,5);
+  var ml = document.getElementById("merchants"); ml.innerHTML = "";
+  document.getElementById("merchantsEmpty").classList.toggle("hidden", merch.length > 0);
+  merch.forEach(function(m){
+    var d = document.createElement("div"); d.className = "merchant-row";
+    d.innerHTML = "<b>"+m+"</b><span>"+money(byMerch[m])+"</span>";
+    ml.appendChild(d);
+  });
+}
+
+/* Transactions */
+function catOptions(selVal){
+  var opts = "";
+  CATS.forEach(function(c){ opts += '<option value="'+c+'"'+(c === selVal ? " selected" : "")+">"+c+"</option>"; });
+  return opts;
+}
+function renderTransactions(){
+  var q = (document.getElementById("txSearch").value || "").toLowerCase();
+  var list = S.tx.slice().sort(function(a,b){ return (b.date + b.id).localeCompare(a.date + a.id); })
+    .filter(function(t){ return !q || (t.name || "").toLowerCase().indexOf(q) !== -1; });
+  var el = document.getElementById("txList"); el.innerHTML = "";
+  document.getElementById("txEmpty").classList.toggle("hidden", S.tx.length > 0);
+  var lastDay = "";
+  list.forEach(function(t){
+    if(t.date !== lastDay){
+      lastDay = t.date;
+      var h = document.createElement("div"); h.className = "day-head";
+      h.textContent = new Date(t.date + "T12:00:00").toLocaleDateString("en-CA", { weekday: "short", month: "short", day: "numeric" });
+      el.appendChild(h);
+    }
+    var row = document.createElement("div"); row.className = "tx";
+    var who = document.createElement("div"); who.className = "who";
+    who.innerHTML = "<b></b>";
+    who.querySelector("b").textContent = t.name || "Unnamed";
+    var sel = document.createElement("select");
+    sel.innerHTML = t.type === "income" ? '<option value="Income" selected>Income</option>' : catOptions(t.cat);
+    sel.addEventListener("change", function(){ t.cat = sel.value; save(); render(); });
+    var amt = document.createElement("div");
+    amt.className = "amt " + (t.type === "income" ? "inc" : "exp");
+    amt.textContent = (t.type === "income" ? "+" : "−") + money(t.amount);
+    var del = document.createElement("button"); del.className = "del"; del.textContent = "✕";
+    del.addEventListener("click", function(){
+      S.tx = S.tx.filter(function(x){ return x.id !== t.id; }); save(); render();
+    });
+    row.appendChild(who); row.appendChild(sel); row.appendChild(amt); row.appendChild(del);
+    el.appendChild(row);
+  });
+}
+document.getElementById("txSearch").addEventListener("input", renderTransactions);
+
+/* Budgets */
+function renderBudgets(){
+  var byCat = spentByCat(curMonth());
+  var el = document.getElementById("budgetList"); el.innerHTML = "";
+  CATS.forEach(function(c){
+    var budget = S.budgets[c] || 0, spent = byCat[c] || 0;
+    var pct = budget > 0 ? Math.min(100, spent / budget * 100) : 0;
+    var over = budget > 0 && spent > budget;
+    var row = document.createElement("div"); row.className = "budget-row";
+    var sub = budget > 0
+      ? (over ? "Over by " + money(spent - budget) + " (" + money(spent) + " spent)" : money(budget - spent) + " left of " + money(budget) + " (" + money(spent) + " spent)")
+      : "No budget set. " + money(spent) + " spent this month.";
+    row.innerHTML = '<div class="top"><b>'+c+'</b><div class="budget-edit"><span class="muted">$</span></div></div>' +
+      '<div class="bar"><i class="'+(over ? "over" : "")+'" style="width:'+pct+'%"></i></div>' +
+      '<div class="sub'+(over ? " over" : "")+'">'+sub+'</div>';
+    var inp = document.createElement("input");
+    inp.type = "number"; inp.min = "0"; inp.step = "1"; inp.placeholder = "0";
+    inp.value = budget || "";
+    inp.addEventListener("change", function(){
+      var v = parseFloat(inp.value);
+      if(v && v > 0) S.budgets[c] = v; else delete S.budgets[c];
+      save(); render();
+    });
+    row.querySelector(".budget-edit").appendChild(inp);
+    el.appendChild(row);
+  });
+}
+
+/* Add */
+var addType = "expense";
+var addCat = document.getElementById("addCategory");
+function fillAddCats(){
+  addCat.innerHTML = addType === "income" ? '<option value="Income">Income</option>' : catOptions("Other");
+}
+document.getElementById("typeExp").addEventListener("click", function(){
+  addType = "expense";
+  this.classList.add("sel"); document.getElementById("typeInc").classList.remove("sel"); fillAddCats();
+});
+document.getElementById("typeInc").addEventListener("click", function(){
+  addType = "income";
+  this.classList.add("sel"); document.getElementById("typeExp").classList.remove("sel"); fillAddCats();
+});
+document.getElementById("addName").addEventListener("blur", function(){
+  if(addType === "expense"){
+    var g = guessCategory(this.value);
+    if(g !== "Other") addCat.value = g;
+  }
+});
+document.getElementById("addDate").value = todayStr();
+document.getElementById("addSave").addEventListener("click", function(){
+  var amt = parseFloat(document.getElementById("addAmount").value);
+  var name = document.getElementById("addName").value.trim();
+  var date = document.getElementById("addDate").value || todayStr();
+  var msg = document.getElementById("addMsg");
+  if(!amt || amt <= 0){ msg.textContent = "Enter an amount first."; return; }
+  if(!name){ msg.textContent = "Enter a name or store."; return; }
+  var cat = addType === "income" ? "Income" : addCat.value;
+  S.tx.push({ id: Date.now() + "" + Math.floor(Math.random()*999), date: date, name: name, amount: Math.round(amt*100)/100, cat: cat, type: addType });
+  save();
+  document.getElementById("addAmount").value = "";
+  document.getElementById("addName").value = "";
+  document.getElementById("addDate").value = todayStr();
+  msg.textContent = "Saved ✓";
+  render();
+});
+
+/* Standalone note */
+(function(){
+  var standalone = window.navigator.standalone === true || window.matchMedia("(display-mode: standalone)").matches;
+  document.getElementById("standaloneNote").textContent = standalone
+    ? "You are in the standalone app version right now. This is the one that lives on your Home Screen."
+    : "You are viewing this inside a browser or another app right now. Follow the steps below to get the standalone version on your Home Screen.";
+})();
+
+function render(){ renderOverview(); renderTransactions(); renderBudgets(); }
+fillAddCats();
+render();
+})();
+</script>
+</body>
+</html>
